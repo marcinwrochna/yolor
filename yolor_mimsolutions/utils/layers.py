@@ -1,9 +1,10 @@
 import torch.nn.functional as F
 
-from utils.general import *
-
 import torch
 from torch import nn
+
+from .general import *
+
 
 try:
     from mish_cuda import MishCuda as Mish
