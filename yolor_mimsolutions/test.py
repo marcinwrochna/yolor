@@ -43,7 +43,9 @@ def test(data,
          save_txt=False,  # for auto-labelling
          save_conf=False,
          plots=True,
-         log_imgs=0):  # number of logged images
+         log_imgs=0,  # number of logged images
+         *,
+         opt: argparse.Namespace):
 
     # Initialize/load model and set device
     training = model is not None
@@ -289,8 +291,42 @@ def test(data,
     return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog='test.py')
+def main(opt: argparse.Namespace) -> None:
+    opt.save_json |= opt.data.endswith('coco.yaml')
+    opt.data = check_file(opt.data)  # check file
+    print(opt)
+
+    if opt.task in ['val', 'test']:  # run normally
+        test(opt.data,
+             opt.weights,
+             opt.batch_size,
+             opt.img_size,
+             opt.conf_thres,
+             opt.iou_thres,
+             opt.save_json,
+             opt.single_cls,
+             opt.augment,
+             opt.verbose,
+             save_txt=opt.save_txt,
+             save_conf=opt.save_conf,
+             opt=opt)
+
+    elif opt.task == 'study':  # run over a range of settings and save/plot
+        for weights in ['yolor_p6.pt', 'yolor_w6.pt']:
+            f = 'study_%s_%s.txt' % (Path(opt.data).stem, Path(weights).stem)  # filename to save to
+            x = list(range(320, 800, 64))  # x axis
+            y = []  # y axis
+            for i in x:  # img-size
+                print('\nRunning %s point %s...' % (f, i))
+                r, _, t = test(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json, opt=opt)
+                y.append(r + t)  # results and times
+            np.savetxt(f, y, fmt='%10.4g')  # save
+        os.system('zip -r study.zip study_*.txt')
+        # utils.general.plot_study_txt(f, x)  # plot
+
+
+def configure_argparser(parser: argparse.ArgumentParser) -> None:
+    parser.set_defaults(main_function=main)
     parser.add_argument('--weights', nargs='+', type=str, default='yolor_p6.pt', help='model.pt path(s)')
     parser.add_argument('--data', type=str, default='data/coco.yaml', help='*.data path')
     parser.add_argument('--batch-size', type=int, default=32, help='size of each image batch')
@@ -310,35 +346,10 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--cfg', type=str, default='cfg/yolor_p6.cfg', help='*.cfg path')
     parser.add_argument('--names', type=str, default='data/coco.names', help='*.cfg path')
-    opt = parser.parse_args()
-    opt.save_json |= opt.data.endswith('coco.yaml')
-    opt.data = check_file(opt.data)  # check file
-    print(opt)
 
-    if opt.task in ['val', 'test']:  # run normally
-        test(opt.data,
-             opt.weights,
-             opt.batch_size,
-             opt.img_size,
-             opt.conf_thres,
-             opt.iou_thres,
-             opt.save_json,
-             opt.single_cls,
-             opt.augment,
-             opt.verbose,
-             save_txt=opt.save_txt,
-             save_conf=opt.save_conf,
-             )
 
-    elif opt.task == 'study':  # run over a range of settings and save/plot
-        for weights in ['yolor_p6.pt', 'yolor_w6.pt']:
-            f = 'study_%s_%s.txt' % (Path(opt.data).stem, Path(weights).stem)  # filename to save to
-            x = list(range(320, 800, 64))  # x axis
-            y = []  # y axis
-            for i in x:  # img-size
-                print('\nRunning %s point %s...' % (f, i))
-                r, _, t = test(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json)
-                y.append(r + t)  # results and times
-            np.savetxt(f, y, fmt='%10.4g')  # save
-        os.system('zip -r study.zip study_*.txt')
-        # utils.general.plot_study_txt(f, x)  # plot
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    configure_argparser(parser)
+    args = parser.parse_args()
+    main(args)

@@ -4,12 +4,8 @@ import torch
 
 from yolor_mimsolutions.utils.google_utils import attempt_download
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='./yolov4.pt', help='weights path')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')
-    parser.add_argument('--batch-size', type=int, default=1, help='batch size')
-    opt = parser.parse_args()
+
+def main(opt: argparse.Namespace) -> None:
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
 
@@ -66,3 +62,17 @@ if __name__ == '__main__':
 
     # Finish
     print('\nExport complete. Visualize with https://github.com/lutzroeder/netron.')
+
+
+def configure_argparser(parser: argparse.ArgumentParser) -> None:
+    parser.set_defaults(main_function=main)
+    parser.add_argument('--weights', type=str, default='./yolov4.pt', help='weights path')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')
+    parser.add_argument('--batch-size', type=int, default=1, help='batch size')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    configure_argparser(parser)
+    args = parser.parse_args()
+    main(args)

@@ -27,7 +27,7 @@ def load_classes(path):
         names = f.read().split('\n')
     return list(filter(None, names))  # filter removes empty strings (such as last line)
 
-def detect(save_img=False):
+def detect(opt: argparse.Namespace, save_img=False):
     out, source, weights, view_img, save_txt, imgsz, cfg, names = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.cfg, opt.names
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
@@ -157,8 +157,19 @@ def detect(save_img=False):
     print('Done. (%.3fs)' % (time.time() - t0))
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+def main(opt: argparse.Namespace) -> None:
+    print(opt)
+    with torch.no_grad():
+        if opt.update:  # update all models (to fix SourceChangeWarning)
+            for opt.weights in ['']:
+                detect(opt)
+                strip_optimizer(opt.weights)
+        else:
+            detect(opt)
+
+
+def configure_argparser(parser: argparse.ArgumentParser) -> None:
+    parser.set_defaults(main_function=main)
     parser.add_argument('--weights', nargs='+', type=str, default='yolor_p6.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--output', type=str, default='inference/output', help='output folder')  # output folder
@@ -174,13 +185,10 @@ if __name__ == '__main__':
     parser.add_argument('--update', action='store_true', help='update all models')
     parser.add_argument('--cfg', type=str, default='cfg/yolor_p6.cfg', help='*.cfg path')
     parser.add_argument('--names', type=str, default='data/coco.names', help='*.cfg path')
-    opt = parser.parse_args()
-    print(opt)
 
-    with torch.no_grad():
-        if opt.update:  # update all models (to fix SourceChangeWarning)
-            for opt.weights in ['']:
-                detect()
-                strip_optimizer(opt.weights)
-        else:
-            detect()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    configure_argparser(parser)
+    args = parser.parse_args()
+    main(args)
