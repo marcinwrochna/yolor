@@ -1,5 +1,5 @@
 # General utils
-
+import atexit
 import glob
 import logging
 import math
@@ -10,6 +10,7 @@ import re
 import subprocess
 import time
 from pathlib import Path
+import importlib_resources
 
 import cv2
 import matplotlib
@@ -18,8 +19,9 @@ import torch
 import yaml
 
 from .google_utils import gsutil_getsize
-from .metrics import fitness, fitness_p, fitness_r, fitness_ap50, fitness_ap, fitness_f   
+from .metrics import fitness, fitness_p, fitness_r, fitness_ap50, fitness_ap, fitness_f
 from .torch_utils import init_torch_seeds
+from .. import data
 
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -69,6 +71,13 @@ def check_file(file):
     if os.path.isfile(file) or file == '':
         return file
     else:
+        try:
+            source = importlib_resources.files(data).joinpath(file)
+            context = importlib_resources.as_file(source)
+            atexit.register(context.__exit__, None, None, None)
+            return str(context.__enter__())
+        except (FileNotFoundError, ValueError):
+            pass
         files = glob.glob('./**/' + file, recursive=True)  # find file
         assert len(files), 'File Not Found: %s' % file  # assert file was found
         assert len(files) == 1, "Multiple files match '%s', specify exact path: %s" % (file, files)  # assert unique
