@@ -23,3 +23,11 @@ python -m yolor_mimsolutions train --batch-size 32 \
                                    --epochs 300
 ```
 Files like `yolor_p6.cfg` or `hyp.scratch.1280.yaml` are then retrieved from inside the package (or you can provide your own).
+
+## Modifying
+After modifying the repo, you might need to rebuild it (I'm actually not sure):
+```bash
+rm -rf yolor_mimsolutions.egg-info/ dist/
+python -m build 
+git add dist
+```
