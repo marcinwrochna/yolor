@@ -42,6 +42,9 @@ except ImportError:
     logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
 
 def train(hyp, opt, device, tb_writer=None, wandb=None):
+    if not opt.use_wandb:
+        wandb = None
+        
     logger.info(f'Hyperparameters {hyp}')
     save_dir, epochs, batch_size, total_batch_size, weights, rank = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
@@ -619,6 +622,7 @@ def configure_argparser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--no-wandb', dest='use_wandb', action='store_false')
 
 
 if __name__ == '__main__':
