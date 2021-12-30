@@ -44,7 +44,7 @@ except ImportError:
 def train(hyp, opt, device, tb_writer=None, wandb=None):
     if not opt.use_wandb:
         wandb = None
-        
+
     logger.info(f'Hyperparameters {hyp}')
     save_dir, epochs, batch_size, total_batch_size, weights, rank = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
@@ -450,7 +450,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             plot_results(save_dir=save_dir)  # save as results.png
             if wandb:
                 wandb.log({"Results": [wandb.Image(str(save_dir / x), caption=x) for x in
-                                       ['results.png', 'precision-recall_curve.png']]})
+                                       ['results.png', 'precision-recall_curve.png']
+                                       if (Path(save_dir) / x).exists()]})
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
     else:
         dist.destroy_process_group()
