@@ -167,7 +167,7 @@ def test(data,
                              "box_caption": "%s %.3f" % (names[int(cls)] if 0 <= int(cls) < len(names) else str(cls), conf),
                              "scores": {"class_score": conf},
                              "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
-                boxes = {"predictions": {"box_data": box_data, "class_labels": names}}
+                boxes = {"predictions": {"box_data": box_data, "class_labels": {i: name for i, name in enumerate(names)}}}
                 wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
 
             # Clip boxes to image bounds
